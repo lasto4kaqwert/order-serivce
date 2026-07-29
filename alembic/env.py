@@ -1,12 +1,29 @@
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
+from sqlalchemy.engine import make_url
 
 from alembic import context
+from infrastructure.persistence.models import Base
+from settings import Settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+settings = Settings()
+
+async_database_url = make_url(settings.database_url)
+
+alembic_database_url = async_database_url.set(
+    drivername="postgresql+psycopg2",
+)
+
+config.set_main_option(
+    "sqlalchemy.url",
+    alembic_database_url
+    .render_as_string(hide_password=False)
+    .replace("%", "%%"),
+)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -17,7 +34,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

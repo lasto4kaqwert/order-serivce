@@ -1,10 +1,18 @@
-from pydantic import AnyHttpUrl, SecretStr
+from pydantic import AnyHttpUrl, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    capashino_base_url: AnyHttpUrl
-    capashino_api_token: SecretStr
+    catalog_base_url: AnyHttpUrl = Field(
+        validation_alias="CATALOG_BASE_URL"
+    )
+    api_token: SecretStr = Field(
+        validation_alias="API_TOKEN"
+    )
+
+    database_url: str = Field(
+        validation_alias="POSTGRES_CONNECTION_STRING"
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

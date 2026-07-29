@@ -1,15 +1,14 @@
 import uuid
-
-from typing import Annotated
 from decimal import Decimal
+from typing import Annotated
+
 from pydantic import (
-    BaseModel, 
-    AnyHttpUrl, 
+    AnyHttpUrl,
+    BaseModel,
     StringConstraints,
     UrlConstraints,
     field_validator,
 )
-
 
 IdempotencyKey = Annotated[
     str,
@@ -47,7 +46,7 @@ class PaymentServiceRequestModel(BaseModel):
                 "callback_url must contain an internal Kubernetes service hostname"
             )
 
-        if value.path != "/api/orders/payments-callback":
+        if value.path != "/api/orders/payment-callback":
             raise ValueError(
                 "invalid payments callback path"
             )
