@@ -51,7 +51,7 @@ class OrderRepository(ApplicationOrderRepository):
                 order.idempotency_key,
             )
 
-        return to_domain()
+        return to_domain(persisted_order)
 
     @override
     async def get(self, order_id: uuid.UUID) -> Order | None:
