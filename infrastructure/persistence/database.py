@@ -13,7 +13,7 @@ database_url = make_url(settings.database_url).set(
     drivername="postgresql+asyncpg",
 )
 
-engine = create_async_engine(str(database_url))
+engine = create_async_engine(database_url)
 
 
 async_session_factory = async_sessionmaker(
