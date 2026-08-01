@@ -47,7 +47,7 @@ class CreateOrderUseCase(CreateOrderUseCase):
         )
 
         async with self._uow:
-            await self._uow.orders.add(order)
+            persisted_order = await self._uow.orders.add(order)
             await self._uow.commit()
 
-        return order
+        return persisted_order

@@ -5,7 +5,6 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing_extensions import override
 
-from application.exceptions.orders import DuplicateIdempotencyKeyError
 from application.ports import ApplicationOrderRepository
 from domain.entities import Order
 from infrastructure.persistence.mappers.order import (
@@ -19,7 +18,7 @@ class OrderRepository(ApplicationOrderRepository):
         self._session = session
 
     @override
-    async def add(self, order: Order) -> None:
+    async def add(self, order: Order) -> Order:
         statement = (
             insert(OrderModel)
             .values(
@@ -38,12 +37,21 @@ class OrderRepository(ApplicationOrderRepository):
             .returning(OrderModel.id)
         )
 
-        inseted_id = await self._session.scalar(statement)
+        persisted_order = await self._session.scalar(statement)
 
-        if inseted_id is None:
-            raise DuplicateIdempotencyKeyError(
+        if persisted_order is None:
+            persisted_order = await self._session.scalar(
+                select(OrderModel).where(
+                    Order.idempotency_key == order.idempotency_key
+                )
+            )
+
+        if persisted_order is None:
+            raise RuntimeError(
                 order.idempotency_key,
             )
+
+        return to_domain()
 
     @override
     async def get(self, order_id: uuid.UUID) -> Order | None:
