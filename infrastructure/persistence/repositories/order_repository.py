@@ -37,18 +37,20 @@ class OrderRepository(ApplicationOrderRepository):
             .returning(OrderModel.id)
         )
 
-        persisted_order = await self._session.scalar(statement)
+        inserted_id = await self._session.scalar(statement)
 
-        if persisted_order is None:
-            persisted_order = await self._session.scalar(
-                select(OrderModel).where(
-                    Order.idempotency_key == order.idempotency_key
-                )
+        if inserted_id is not None:
+            return order
+
+        persisted_order = await self._session.scalar(
+            select(OrderModel).where(
+                OrderModel.idempotency_key == order.idempotency_key
             )
+        )
 
         if persisted_order is None:
             raise RuntimeError(
-                order.idempotency_key,
+                "Failed to retrieve an existing idempotent order"
             )
 
         return to_domain(persisted_order)
