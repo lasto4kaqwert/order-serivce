@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+from typing import Any
 from urllib.parse import urljoin
 
 import httpx
@@ -29,4 +31,15 @@ class HttpClient:
         return await self._client.get(
             self._build_url(path),
             headers=self._headers,
+        )
+
+    async def _post(
+        self,
+        path: str,
+        payload: Mapping[str, Any] | None = None,
+    ) -> httpx.Response:
+        return await self._client.post(
+            self._build_url(path),
+            headers=self._headers,
+            json=payload,
         )

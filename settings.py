@@ -6,6 +6,12 @@ class Settings(BaseSettings):
     catalog_base_url: AnyHttpUrl = Field(
         validation_alias="CATALOG_BASE_URL"
     )
+    payment_base_url: AnyHttpUrl = Field(
+        validation_alias="PAYMENT_BASE_URL"
+    )
+    payment_callback_url: AnyHttpUrl = Field(
+        validation_alias="PAYMENT_CALLBACK_URL"
+    )
     api_token: SecretStr = Field(
         validation_alias="API_TOKEN"
     )

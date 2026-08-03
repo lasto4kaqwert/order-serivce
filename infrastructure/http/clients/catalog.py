@@ -10,12 +10,12 @@ from application.exceptions.catalog import (
     CatalogUnavailableError,
     InvalidCatalogResponseError,
 )
-from application.ports import ApplicationCatalogClient
+from application.ports.clients import ABCCatalogClient
 from infrastructure.http.http_client import HttpClient
 from infrastructure.http.schemas.catalog import CatalogItemResponse
 
 
-class HttpCatalogClient(HttpClient, ApplicationCatalogClient):
+class HttpCatalogClient(HttpClient, ABCCatalogClient):
     @override
     async def get_item(
         self,

@@ -1,8 +1,9 @@
 import httpx
 from fastapi import Depends, Request
 
-from application.ports.clients.catalog_client import (
-    ApplicationCatalogClient,
+from application.ports.clients import (
+    ABCCatalogClient,
+    ABCPaymentClient,
 )
 from application.ports.uow.order_uow import (
     ApplicationOrderUnitOfWork,
@@ -16,6 +17,7 @@ from application.ports.usecases.get_order import (
 from application.usecases.create_order import CreateOrderUseCase
 from application.usecases.get_order import GetOrderUseCase
 from infrastructure.http.clients.catalog import HttpCatalogClient
+from infrastructure.http.clients.payment import HttpPaymentClient
 from infrastructure.persistence.database import async_session_factory
 from infrastructure.persistence.uow.order import OrderUnitOfWork
 from settings import Settings
@@ -29,10 +31,20 @@ def get_http_client(request: Request) -> httpx.AsyncClient:
 
 def build_catalog_client(
     client: httpx.AsyncClient = Depends(get_http_client),
-) -> ApplicationCatalogClient:
+) -> ABCCatalogClient:
     return HttpCatalogClient(
         client=client,
         base_url=str(settings.catalog_base_url),
+        api_key=settings.api_token.get_secret_value(),
+    )
+
+
+def build_payment_client(
+    client: httpx.AsyncClient = Depends(get_http_client),
+) -> ABCPaymentClient:
+    return HttpPaymentClient(
+        client=client,
+        base_url=str(settings.payment_base_url),
         api_key=settings.api_token.get_secret_value(),
     )
 
@@ -43,13 +55,20 @@ def build_order_uow() -> ApplicationOrderUnitOfWork:
 
 def build_create_order_usecase(
     uow: ApplicationOrderUnitOfWork = Depends(build_order_uow),
-    catalog_client: ApplicationCatalogClient = Depends(
+    catalog_client: ABCCatalogClient = Depends(
         build_catalog_client
+    ),
+    payment_client: ABCPaymentClient = Depends(
+        build_payment_client
     ),
 ) -> ApplicationCreateOrderUseCase:
     return CreateOrderUseCase(
         uow=uow,
         client=catalog_client,
+        payment_client=payment_client,
+        payment_callback_url=str(
+            settings.payment_callback_url
+        ),
     )
 
 

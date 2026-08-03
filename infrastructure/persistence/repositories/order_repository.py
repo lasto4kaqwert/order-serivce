@@ -1,6 +1,11 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import (
+    select,
+)
+from sqlalchemy import (
+    update as sa_update,
+)
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing_extensions import override
@@ -63,3 +68,24 @@ class OrderRepository(ApplicationOrderRepository):
             )
         )
         return to_domain(model) if model is not None else None
+
+    @override
+    async def update(self, order: Order) -> Order:
+        statement = (
+            sa_update(OrderModel)
+            .where(OrderModel.id == order.id)
+            .values(
+                status=order.status,
+                update_at=order.update_at,
+            )
+            .returning(OrderModel)
+        )
+
+        model = await self._session.scalar(statement)
+
+        if model is None:
+            raise RuntimeError(
+                f"Order {order.id} disappeared during update"
+            )
+
+        return to_domain(model)

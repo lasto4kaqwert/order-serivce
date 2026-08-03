@@ -33,10 +33,6 @@ class OrderModel(Base):
             name="order_quantity_is_positive",
         ),
         CheckConstraint(
-            "length(trim(user_id)) > 0",
-            name="order_user_id_is_not_blank",
-        ),
-        CheckConstraint(
             "length(trim(idempotency_key)) > 0",
             name="order_idempotency_key_is_not_blank",
         ),
@@ -51,8 +47,8 @@ class OrderModel(Base):
         primary_key=True,
     )
 
-    user_id: Mapped[str] = mapped_column(
-        String(255),
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         nullable=False,
     )
 

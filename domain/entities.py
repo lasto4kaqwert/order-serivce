@@ -19,7 +19,7 @@ class OrderStatus(StrEnum):
 
 @dataclass(slots=True, kw_only=True)
 class Order:
-    user_id: str
+    user_id: uuid.UUID
     quantity: int
     item_id: uuid.UUID
     idempotency_key: str
@@ -30,12 +30,25 @@ class Order:
     update_at: datetime = field(default_factory=utc_now)
 
     def __post_init__(self) -> None:
-        self.user_id = self.user_id.strip()
         self.idempotency_key = self.idempotency_key.strip()
 
         if self.quantity <= 0:
             raise InvalidOrderQuantityError(self.quantity)
-        if not self.user_id:
-            raise ValueError("user_id must be not blank")
         if not self.idempotency_key:
             raise ValueError("idempotency_key most be not blank")
+
+    def cancel(self) -> None:
+        if self.status is OrderStatus.CANCELLED:
+            return
+        if self.status is OrderStatus.SHIPPED:
+            raise ValueError(
+                "Shipped order cannot be cancelled"
+            )
+
+        self.status = OrderStatus.CANCELLED
+        self.update_at = utc_now()
+
+class PaymentStatus(StrEnum):
+    PENDING = "pending"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"

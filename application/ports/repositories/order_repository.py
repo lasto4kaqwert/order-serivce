@@ -12,3 +12,7 @@ class ApplicationOrderRepository(ABC):
     @abstractmethod
     async def get(self, order_id: UUID) -> Order | None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def update(self, order: Order) -> Order:
+        raise NotImplementedError
