@@ -9,7 +9,7 @@ from domain.entities import PaymentStatus
 @dataclass(frozen=True, slots=True)
 class PaymentItem:
     id: uuid.UUID
-    user_id: uuid.UUID
+    user_id: str
     order_id: uuid.UUID
     amount: Decimal
     status: PaymentStatus

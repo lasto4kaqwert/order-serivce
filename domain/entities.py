@@ -22,7 +22,7 @@ class OrderStatus(StrEnum):
 
 @dataclass(slots=True, kw_only=True)
 class Order:
-    user_id: uuid.UUID
+    user_id: str
     quantity: int
     item_id: uuid.UUID
     idempotency_key: str

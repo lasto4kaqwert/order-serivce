@@ -15,7 +15,7 @@ IdempotencyKey = Annotated[
 
 
 class CreateOrderSchema(BaseModel):
-    user_id: uuid.UUID
+    user_id: str
     quantity: int = Field(gt=0)
     item_id: uuid.UUID
     idempotency_key: IdempotencyKey
@@ -23,7 +23,7 @@ class CreateOrderSchema(BaseModel):
 
 class OrderResponse(BaseModel):
     id: uuid.UUID
-    user_id: uuid.UUID
+    user_id: str
     quantity: int
     item_id: uuid.UUID
     status: OrderStatus

@@ -39,7 +39,7 @@ class PaymentCreateRequest(BaseModel):
 
 class PaymentCreateResponse(BaseModel):
     id: uuid.UUID
-    user_id: uuid.UUID
+    user_id: str
     order_id: uuid.UUID
     amount: Decimal = Field(gt=0)
     status: Literal[PaymentStatus.PENDING]

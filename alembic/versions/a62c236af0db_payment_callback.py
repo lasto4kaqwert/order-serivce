@@ -20,20 +20,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.drop_constraint(
-        "order_user_id_is_not_blank",
-        "orders",
-        type_="check",
-    )
-
-    op.alter_column(
-        "orders",
-        "user_id",
-        existing_type=sa.String(length=255),
-        type_=sa.UUID(),
-        existing_nullable=False,
-        postgresql_using="user_id::uuid",
-    )
 
     op.create_table(
         "payment_callback",
@@ -96,18 +82,3 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     op.drop_table("payment_callback")
-    
-    op.alter_column(
-        "orders",
-        "user_id",
-        existing_type=sa.UUID(),
-        type_=sa.String(length=255),
-        existing_nullable=False,
-        postgresql_using="user_id::text",
-    )
-
-    op.create_check_constraint(
-        "order_user_id_is_not_blank",
-        "orders",
-        "length(trim(user_id)) > 0",
-    )
