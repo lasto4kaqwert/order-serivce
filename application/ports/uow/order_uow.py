@@ -5,10 +5,14 @@ from typing import Self
 from application.ports.repositories.order_repository import (
     ApplicationOrderRepository,
 )
+from application.ports.repositories.payment_callback_repository import (
+    ABCPaymentCallbackRepository,
+)
 
 
 class ApplicationOrderUnitOfWork(ABC):
     orders: ApplicationOrderRepository
+    payment_callbacks: ABCPaymentCallbackRepository
 
     @abstractmethod
     async def __aenter__(self) -> Self:

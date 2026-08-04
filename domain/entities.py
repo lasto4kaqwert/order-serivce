@@ -3,7 +3,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import StrEnum
 
-from domain.exceptions import InvalidOrderQuantityError
+from domain.exceptions import (
+    InvalidOrderQuantityError,
+    InvalidOrderStatusTransitionError,
+)
 
 
 def utc_now() -> datetime:
@@ -41,11 +44,24 @@ class Order:
         if self.status is OrderStatus.CANCELLED:
             return
         if self.status is OrderStatus.SHIPPED:
-            raise ValueError(
-                "Shipped order cannot be cancelled"
+            raise InvalidOrderStatusTransitionError(
+                self.status,
+                OrderStatus.CANCELLED,
             )
 
         self.status = OrderStatus.CANCELLED
+        self.update_at = utc_now()
+
+    def mark_paid(self) -> None:
+        if self.status is OrderStatus.PAID:
+            return
+        if self.status is not OrderStatus.NEW:
+            raise InvalidOrderStatusTransitionError(
+                self.status,
+                OrderStatus.PAID,
+            )
+
+        self.status = OrderStatus.PAID
         self.update_at = utc_now()
 
 class PaymentStatus(StrEnum):

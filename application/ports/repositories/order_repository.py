@@ -16,3 +16,7 @@ class ApplicationOrderRepository(ABC):
     @abstractmethod
     async def update(self, order: Order) -> Order:
         raise NotImplementedError
+
+    @abstractmethod
+    async def get_for_update(self, order: UUID) -> Order | None:
+        raise NotImplementedError

@@ -14,8 +14,12 @@ from application.ports.usecases.create_order import (
 from application.ports.usecases.get_order import (
     ApplicationGetOrderUseCase,
 )
+from application.ports.usecases.handle_payment_callback import (
+    ABCHandlePaymentCallbackUseCase,
+)
 from application.usecases.create_order import CreateOrderUseCase
 from application.usecases.get_order import GetOrderUseCase
+from application.usecases.handle_payment_callback import HandlePaymentCallbackUseCase
 from infrastructure.http.clients.catalog import HttpCatalogClient
 from infrastructure.http.clients.payment import HttpPaymentClient
 from infrastructure.persistence.database import async_session_factory
@@ -64,7 +68,7 @@ def build_create_order_usecase(
 ) -> ApplicationCreateOrderUseCase:
     return CreateOrderUseCase(
         uow=uow,
-        client=catalog_client,
+        catalog_client=catalog_client,
         payment_client=payment_client,
         payment_callback_url=str(
             settings.payment_callback_url
@@ -76,3 +80,11 @@ def build_get_order_usecase(
     uow: ApplicationOrderUnitOfWork = Depends(build_order_uow),
 ) -> ApplicationGetOrderUseCase:
     return GetOrderUseCase(uow=uow)
+
+
+def build_handle_payment_callback_usecase(
+    uow: ApplicationOrderUnitOfWork = Depends(
+        build_order_uow
+    ),
+) -> ABCHandlePaymentCallbackUseCase:
+    return HandlePaymentCallbackUseCase(uow=uow)

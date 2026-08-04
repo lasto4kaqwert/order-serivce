@@ -24,6 +24,7 @@ class CreatePaymentCommand:
     callback_url: str
     idempotency_key: str
 
+
 @dataclass(frozen=True, slots=True)
 class PaymentCallbackCommand:
     payment_id: uuid.UUID
@@ -31,3 +32,13 @@ class PaymentCallbackCommand:
     status: PaymentStatus
     amount: Decimal
     error_message: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ProcessedPaymentCallback:
+    payment_id: uuid.UUID
+    order_id: uuid.UUID
+    status: PaymentStatus
+    amount: Decimal
+    error_message: str | None
+    processed_at: datetime

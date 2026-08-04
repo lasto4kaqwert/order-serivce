@@ -11,6 +11,9 @@ from application.exceptions.orders import (
     InsufficientStockError,
     OrderNotFoundError,
 )
+from application.exceptions.payment import (
+    PaymentCallbackConflictError,
+)
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -76,4 +79,14 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"detail": str(error)}
+        )
+
+    @app.exception_handler(PaymentCallbackConflictError)
+    async def handle_payment_callback_conflict(
+        _: Request,
+        error: PaymentCallbackConflictError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"detail": str(error)},
         )

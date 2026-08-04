@@ -3,9 +3,12 @@ from typing_extensions import override
 from application.dto.order import CreateOrderCommand
 from application.dto.payment import CreatePaymentCommand
 from application.exceptions.orders import (
+    DuplicateIdempotencyKeyError,
     InsufficientStockError,
 )
-from application.exceptions.payment import PaymentError
+from application.exceptions.payment import (
+    PaymentError,
+)
 from application.ports import (
     ApplicationCreateOrderUseCase as CreateOrderUseCase,
 )
@@ -25,12 +28,12 @@ class CreateOrderUseCase(CreateOrderUseCase):
     def __init__(
         self,
         uow: OrderUnitOfWork,
-        order_client: CatalogClient,
+        catalog_client: CatalogClient,
         payment_client: PaymentClient,
         payment_callback_url: str,
     ) -> None:
         self._uow = uow
-        self._order_client = order_client
+        self._catalog_client = catalog_client
         self._payment_client = payment_client
         self._payment_callback_url = payment_callback_url
 
@@ -39,7 +42,7 @@ class CreateOrderUseCase(CreateOrderUseCase):
         self,
         command: CreateOrderCommand,
     ) -> Order:
-        item = await self._order_client.get_item(command.item_id)
+        item = await self._catalog_client.get_item(command.item_id)
 
         if item.available_qty < command.quantity:
             raise InsufficientStockError(
@@ -59,11 +62,25 @@ class CreateOrderUseCase(CreateOrderUseCase):
             persisted_order = await self._uow.orders.add(order)
             await self._uow.commit()
 
+        if persisted_order.id != order.id:
+            same_request = (
+                persisted_order.user_id == command.user_id
+                and persisted_order.item_id == command.item_id
+                and persisted_order.quantity == command.quantity
+            )
+
+            if not same_request:
+                raise DuplicateIdempotencyKeyError(
+                    command.idempotency_key
+                )
+
+            return persisted_order
+
         try:
             await self._payment_client.create_payment(
                 CreatePaymentCommand(
-                    order_id=persisted_order.item_id,
-                    amount=persisted_order.quantity,
+                    order_id=persisted_order.id,
+                    amount=item.price * persisted_order.quantity,
                     callback_url=self._payment_callback_url,
                     idempotency_key=persisted_order.idempotency_key,
                 ),

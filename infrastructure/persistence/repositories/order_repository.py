@@ -89,3 +89,18 @@ class OrderRepository(ApplicationOrderRepository):
             )
 
         return to_domain(model)
+
+    @override
+    async def get_for_update(
+        self,
+        order_id: uuid.UUID,
+    ) -> Order | None:
+        statement = (
+            select(OrderModel)
+            .where(OrderModel.id == order_id)
+            .with_for_update()
+        )
+
+        model = await self._session.scalar(statement)
+
+        return to_domain(model) if model is not None else None

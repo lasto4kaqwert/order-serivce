@@ -8,6 +8,9 @@ from application.ports import ApplicationOrderUnitOfWork
 from infrastructure.persistence.repositories.order_repository import (
     OrderRepository,
 )
+from infrastructure.persistence.repositories.payment_callback_repository import (
+    PaymentCallbackRepository,
+)
 
 
 class OrderUnitOfWork(ApplicationOrderUnitOfWork):
@@ -21,7 +24,11 @@ class OrderUnitOfWork(ApplicationOrderUnitOfWork):
     @override
     async def __aenter__(self) -> Self:
         self._session = self._session_factory()
+
         self.orders = OrderRepository(self._session)
+        self.payment_callbacks = PaymentCallbackRepository(
+            self._session
+        )
 
         return self
 
