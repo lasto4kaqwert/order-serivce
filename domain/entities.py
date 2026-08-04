@@ -52,7 +52,7 @@ class Order:
         self.status = OrderStatus.CANCELLED
         self.update_at = utc_now()
 
-    def mark_paid(self) -> None:
+    def pay(self) -> None:
         if self.status is OrderStatus.PAID:
             return
         if self.status is not OrderStatus.NEW:
@@ -63,6 +63,19 @@ class Order:
 
         self.status = OrderStatus.PAID
         self.update_at = utc_now()
+
+    def ship(self) -> None:
+        if self.status is OrderStatus.SHIPPED:
+            return
+        if self.status is not OrderStatus.PAID:
+            raise InvalidOrderStatusTransitionError(
+                self.status,
+                OrderStatus.SHIPPED,
+            )
+
+        self.status = OrderStatus.SHIPPED
+        self.update_at = utc_now()
+
 
 class PaymentStatus(StrEnum):
     PENDING = "pending"

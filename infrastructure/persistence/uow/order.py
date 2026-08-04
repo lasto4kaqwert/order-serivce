@@ -5,8 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from typing_extensions import override
 
 from application.ports import ApplicationOrderUnitOfWork
+from infrastructure.persistence.repositories.inbox_repository import (
+    InboxRepository,
+)
 from infrastructure.persistence.repositories.order_repository import (
     OrderRepository,
+)
+from infrastructure.persistence.repositories.outbox_repository import (
+    OutboxRepository,
 )
 from infrastructure.persistence.repositories.payment_callback_repository import (
     PaymentCallbackRepository,
@@ -29,6 +35,8 @@ class OrderUnitOfWork(ApplicationOrderUnitOfWork):
         self.payment_callbacks = PaymentCallbackRepository(
             self._session
         )
+        self.outbox = OutboxRepository(self._session)
+        self.inbox = InboxRepository(self._session)
 
         return self
 

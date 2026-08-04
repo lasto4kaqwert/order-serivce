@@ -20,6 +20,19 @@ class Settings(BaseSettings):
         validation_alias="POSTGRES_CONNECTION_STRING"
     )
 
+    kafka_bootstrap_servers: str = Field(
+        validation_alias="KAFKA_BOOTSTRAP_SERVERS"
+    )
+    kafka_order_events_topic: str = Field(
+        validation_alias="KAFKA_ORDER_EVENTS_TOPIC"
+    )
+    kafka_shipment_events_topic: str = Field(
+        validation_alias="KAFKA_SHIPMENT_EVENTS_TOPIC"
+    )
+    kafka_consumer_group: str = Field(
+        validation_alias="KAFKA_CONSUMER_GROUP"
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

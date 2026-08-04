@@ -87,4 +87,7 @@ def build_handle_payment_callback_usecase(
         build_order_uow
     ),
 ) -> ABCHandlePaymentCallbackUseCase:
-    return HandlePaymentCallbackUseCase(uow=uow)
+    return HandlePaymentCallbackUseCase(
+        uow=uow,
+        order_events_topic=settings.kafka_order_events_topic,
+    )

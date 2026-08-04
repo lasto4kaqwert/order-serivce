@@ -47,7 +47,7 @@ class OrderModel(Base):
         primary_key=True,
     )
 
-    user_id: Mapped[uuid.UUID] = mapped_column(
+    user_id: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
     )

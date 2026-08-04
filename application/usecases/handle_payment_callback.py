@@ -1,7 +1,10 @@
+import uuid
 from datetime import datetime, timezone
 
 from typing_extensions import override
 
+from application.dto.order import OrderPaidEvent
+from application.dto.outbox import OutboxEvent
 from application.dto.payment import (
     PaymentCallbackCommand,
     ProcessedPaymentCallback,
@@ -23,8 +26,10 @@ class HandlePaymentCallbackUseCase(
     def __init__(
         self,
         uow: ApplicationOrderUnitOfWork,
+        order_events_topic: str,
     ) -> None:
         self._uow = uow
+        self._order_events_topic = order_events_topic
 
     @override
     async def execute(
@@ -65,7 +70,26 @@ class HandlePaymentCallbackUseCase(
                 )
 
             if command.status is PaymentStatus.SUCCEEDED:
-                order.mark_paid()
+                order.pay()
+
+                paid_event = OrderPaidEvent(
+                    order_id=order.id,
+                    item_id=order.item_id,
+                    quantity=order.quantity,
+                    idempotency_key=order.idempotency_key,
+                )
+
+                await self._uow.outbox.add(
+                    OutboxEvent(
+                        id=uuid.uuid4(),
+                        topic=self._order_events_topic,
+                        event_type=paid_event.event_type,
+                        aggregate_id=order.id,
+                        deduplication_key=f"order.paid:{order.id}",
+                        payload=paid_event.to_payload(),
+                        created_at=datetime.now(timezone.utc),
+                    )
+                )
             elif command.status is PaymentStatus.FAILED:
                 order.cancel()
             else:
