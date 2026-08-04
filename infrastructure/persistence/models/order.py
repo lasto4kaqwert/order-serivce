@@ -48,7 +48,7 @@ class OrderModel(Base):
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        String(255),
         nullable=False,
     )
 
