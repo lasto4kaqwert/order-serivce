@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     payment_callback_url: AnyHttpUrl = Field(
         validation_alias="PAYMENT_CALLBACK_URL"
     )
+    notification_base_url: AnyHttpUrl = Field(
+        validation_alias="NOTIFICATION_BASE_URL"
+    )
     api_token: SecretStr = Field(
         validation_alias="API_TOKEN"
     )

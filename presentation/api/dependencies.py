@@ -3,6 +3,7 @@ from fastapi import Depends, Request
 
 from application.ports.clients import (
     ABCCatalogClient,
+    ABCNotificationClient,
     ABCPaymentClient,
 )
 from application.ports.uow.order_uow import (
@@ -17,10 +18,16 @@ from application.ports.usecases.get_order import (
 from application.ports.usecases.handle_payment_callback import (
     ABCHandlePaymentCallbackUseCase,
 )
+from application.services.order_notification import (
+    OrderNotificationService,
+)
 from application.usecases.create_order import CreateOrderUseCase
 from application.usecases.get_order import GetOrderUseCase
 from application.usecases.handle_payment_callback import HandlePaymentCallbackUseCase
 from infrastructure.http.clients.catalog import HttpCatalogClient
+from infrastructure.http.clients.notification import (
+    HttpNotificationClient,
+)
 from infrastructure.http.clients.payment import HttpPaymentClient
 from infrastructure.persistence.database import async_session_factory
 from infrastructure.persistence.uow.order import OrderUnitOfWork
@@ -53,6 +60,24 @@ def build_payment_client(
     )
 
 
+def build_notification_client(
+    client: httpx.AsyncClient = Depends(get_http_client),
+) -> ABCNotificationClient:
+    return HttpNotificationClient(
+        client=client,
+        base_url=str(settings.notification_base_url),
+        api_key=settings.api_token.get_secret_value(),
+    )
+
+
+def build_order_notification_service(
+    client: ABCNotificationClient = Depends(
+        build_notification_client
+    ),
+) -> OrderNotificationService:
+    return OrderNotificationService(client)
+
+
 def build_order_uow() -> ApplicationOrderUnitOfWork:
     return OrderUnitOfWork(async_session_factory)
 
@@ -65,6 +90,9 @@ def build_create_order_usecase(
     payment_client: ABCPaymentClient = Depends(
         build_payment_client
     ),
+    notification_service: OrderNotificationService = Depends(
+        build_order_notification_service,
+    ),
 ) -> ApplicationCreateOrderUseCase:
     return CreateOrderUseCase(
         uow=uow,
@@ -73,6 +101,7 @@ def build_create_order_usecase(
         payment_callback_url=str(
             settings.payment_callback_url
         ),
+        notification_service=notification_service,
     )
 
 
@@ -86,8 +115,12 @@ def build_handle_payment_callback_usecase(
     uow: ApplicationOrderUnitOfWork = Depends(
         build_order_uow
     ),
+    notification_service: OrderNotificationService = Depends(
+        build_order_notification_service,
+    ),
 ) -> ABCHandlePaymentCallbackUseCase:
     return HandlePaymentCallbackUseCase(
         uow=uow,
         order_events_topic=settings.kafka_order_events_topic,
+        notification_service=notification_service,
     )

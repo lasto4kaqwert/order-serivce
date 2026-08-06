@@ -17,6 +17,9 @@ from application.ports import (
     ABCHandlePaymentCallbackUseCase,
     ApplicationOrderUnitOfWork,
 )
+from application.services.order_notification import (
+    OrderNotificationService,
+)
 from domain.entities import PaymentStatus
 
 
@@ -27,15 +30,19 @@ class HandlePaymentCallbackUseCase(
         self,
         uow: ApplicationOrderUnitOfWork,
         order_events_topic: str,
+        notification_service: OrderNotificationService,
     ) -> None:
         self._uow = uow
         self._order_events_topic = order_events_topic
+        self._notification_service = notification_service
 
     @override
     async def execute(
         self,
         command: PaymentCallbackCommand,
     ) -> None:
+        notification_reason: str | None = None
+
         async with self._uow:
             order = await self._uow.orders.get_for_update(
                 command.order_id
@@ -92,6 +99,10 @@ class HandlePaymentCallbackUseCase(
                 )
             elif command.status is PaymentStatus.FAILED:
                 order.cancel()
+
+                notification_reason = (
+                    command.error_message or "платеж не выполнен"
+                )
             else:
                 raise ValueError(
                     f"Unexpected callback status: "
@@ -118,6 +129,11 @@ class HandlePaymentCallbackUseCase(
                 )
 
             await self._uow.commit()
+
+        await self._notification_service.send(
+            order,
+            reason=notification_reason,
+        )
 
     @staticmethod
     def _is_same_callback(

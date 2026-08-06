@@ -17,6 +17,9 @@ from application.ports.uow.order_uow import (
 from application.ports.usecases.handle_shipping_event import (
     ABCHandleShippingEventUseCase,
 )
+from application.services.order_notification import (
+    OrderNotificationService,
+)
 
 
 class HandleShippingEventUseCase(
@@ -25,14 +28,18 @@ class HandleShippingEventUseCase(
     def __init__(
         self,
         uow: ApplicationOrderUnitOfWork,
+        notification_service: OrderNotificationService,
     ) -> None:
         self._uow = uow
+        self._notification_service = notification_service
 
     @override
     async def execute(
         self,
         command: HandleShippingEventCommand,
     ) -> None:
+        notification_reason: str | None = None
+
         async with self._uow:
             inserted = await self._uow.inbox.add(
                 InboxMessage(
@@ -78,6 +85,11 @@ class HandleShippingEventUseCase(
                 order.ship()
             elif command.event_type == "order.cancelled":
                 order.cancel()
+
+                reason = command.payload.get("reason")
+
+                if isinstance(reason, str):
+                    notification_reason = reason
             else:
                 raise ShippingEventConflictError(
                     order_id=order.id,
@@ -89,3 +101,8 @@ class HandleShippingEventUseCase(
 
             await self._uow.orders.update(order)
             await self._uow.commit()
+
+        await self._notification_service.send(
+            order,
+            reason=notification_reason,
+        )

@@ -21,6 +21,9 @@ from application.ports.clients import (
 from application.ports.clients import (
     ABCPaymentClient as PaymentClient,
 )
+from application.services.order_notification import (
+    OrderNotificationService,
+)
 from domain.entities import Order
 
 
@@ -31,11 +34,13 @@ class CreateOrderUseCase(CreateOrderUseCase):
         catalog_client: CatalogClient,
         payment_client: PaymentClient,
         payment_callback_url: str,
+        notification_service: OrderNotificationService,
     ) -> None:
         self._uow = uow
         self._catalog_client = catalog_client
         self._payment_client = payment_client
         self._payment_callback_url = payment_callback_url
+        self._notification_service = notification_service
 
     @override
     async def execute(
@@ -76,6 +81,10 @@ class CreateOrderUseCase(CreateOrderUseCase):
 
             return persisted_order
 
+        await self._notification_service.send(
+            persisted_order,
+        )
+
         try:
             await self._payment_client.create_payment(
                 CreatePaymentCommand(
@@ -85,7 +94,7 @@ class CreateOrderUseCase(CreateOrderUseCase):
                     idempotency_key=persisted_order.idempotency_key,
                 ),
             )
-        except PaymentError:
+        except PaymentError as error:
             persisted_order.cancel()
 
             async with self._uow:
@@ -93,6 +102,12 @@ class CreateOrderUseCase(CreateOrderUseCase):
                     persisted_order
                 )
                 await self._uow.commit()
+
+            await self._notification_service.send(
+                persisted_order,
+                reason=str(error),
+            )
+
             raise
 
         return persisted_order
