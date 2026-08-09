@@ -77,21 +77,21 @@ class OrderNotificationService:
     ) -> str:
         if status is OrderStatus.NEW:
             return (
-                "Ваш заказ создан и ожидает оплаты"
+                "NEW: Ваш заказ создан и ожидает оплаты"
             )
         if status is OrderStatus.PAID:
             return (
-                "Ваш заказ успешно оплачен и готов к отправке"
+                "PAID: Ваш заказ успешно оплачен и готов к отправке"
             )
         if status is OrderStatus.SHIPPED:
             return (
-                "Ваш заказ отправлен в доставку"
+                "SHIPPED: Ваш заказ отправлен в доставку"
             )
         if status is OrderStatus.CANCELLED:
             cancellation_reason = reason or "не указана"
 
             return (
-                "Ваш заказ отменен. "
+                "CANCELLED: Ваш заказ отменен. "
                 f"Причина: {cancellation_reason}"
             )
 
