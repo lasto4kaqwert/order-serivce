@@ -1,10 +1,12 @@
 import logging
+import asyncio
 
 from application.dto.notification import (
     SendNotificationCommand,
 )
 from application.exceptions.notification import (
     NotificationError,
+    NotificationUnavailableError,
 )
 from application.ports.clients.notification_client import (
     ABCNotificationClient,
@@ -37,19 +39,36 @@ class OrderNotificationService:
             f"{order.status.value.lower()}"
         )
 
-        try:
-            await self._client.send_notification(
-                SendNotificationCommand(
-                    message=message,
-                    reference_id=order.id,
-                    idempotency_key=idempotency_key,
+        notification = SendNotificationCommand(
+            message=message,
+            reference_id=order.id,
+            idempotency_key=idempotency_key,
+        )
+
+        attempts = 5
+
+        for attempt in range(attempts):
+            try:
+                await self._client.send_notification(notification)
+
+                return
+            except NotificationUnavailableError:
+                if attempt == attempts - 1:
+                    logger.exception(
+                        "Failed to send %s notification for order %s "
+                        "after %s attempts",
+                        order.status, order.id, attempts
+                    )
+
+                    return
+                await asyncio.sleep(0.25 * (2**attempt))
+            except NotificationError:
+                logging.exception(
+                    "Failed to send %s notification for order %s",
+                    order.status, order.id,
                 )
-            )
-        except NotificationError:
-            logging.exception(
-                "Failed to send %s notification for order %s",
-                order.status, order.id,
-            )
+                
+                return
 
     @staticmethod
     def _build_message(
