@@ -1,5 +1,5 @@
-import logging
 import asyncio
+import logging
 
 from application.dto.notification import (
     SendNotificationCommand,
@@ -67,7 +67,7 @@ class OrderNotificationService:
                     "Failed to send %s notification for order %s",
                     order.status, order.id,
                 )
-                
+
                 return
 
     @staticmethod
